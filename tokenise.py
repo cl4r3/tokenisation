@@ -12,6 +12,7 @@ if sys.version_info < (3, 0):
 parser = argparse.ArgumentParser(description='Spaceless Segmentation.')
 parser.add_argument('-hf', '--hfst', help='hfst file', required=True)
 parser.add_argument('-i', '--input', help='input file', required=True)
+parser.add_argument('-t', '--tags', action='store_true', help='show tags')
 
 args = vars(parser.parse_args())
 
@@ -22,32 +23,28 @@ class Tokeniser:
 
 	def tokenise(self, text):
 		chars = list(text)
-		n = len(chars)
+		n = len(chars)+1
 
-		D = np.zeros([len(chars), len(chars)], dtype=object)
+		D = np.zeros([(n),], dtype=object)
 
 		for i in range(0,n):
-			for j in range(0,n):
-				D[i,j] = []
+			D[i] = "FAIL"
 
-		for l in range(1,n):
-			for i in range(0,n-1-l):
-				j = i + l
-				units = []
-				for k in range(i,j-1):
-					if (D[i,k] != "FAIL") and (D[k+1,j] != "FAIL"):
-						if len(units) < len(D[i,k])+len(D[k+1,j]):
-							units = D[i,k] + D[k+1,j]
-					if len(units) == 0:
-						unit = self.isWord(chars[i:j])
-						if unit != False:
-							D[i,j] = [unit]
-						else:
-							D[i,j] = "FAIL"
+		first = self.isWord(chars[0:1])
+		if first != False:
+			D[1] = [first]
+
+		for i in range(2,n):
+			for j in range(0,i+1):
+				right = self.isWord(chars[i-j:i])
+				if right != False:
+					left = D[i-j]
+					if left != "FAIL":
+						D[i] = left + [right]
 					else:
-						D[i,j] = units
-					print(D[i,k])
-		tokens = D[0,n-1]
+						D[i] = [right]
+
+		tokens = D[-1]
 
 		return tokens
 
@@ -72,11 +69,14 @@ class Unit:
 		for i in range(1, len(tags)):
 			self.tags.append("<"+tags[i])
 
-	def __repr__(self):
+	def no_tags(self):
 		return self.word
 
-	def get_tags(self, word):
-		return self.tags
+	def with_tags(self):
+		strtag = ""
+		for tag in self.tags:
+			strtag += tag
+		return self.word + strtag
 
 
 def main(args):
@@ -91,7 +91,10 @@ def main(args):
 			continue
 
 		units = tokeniser_obj.tokenise(line)
-		units = [unit.__repr__() for unit in units]
+		if not args['tags']:
+			units = [unit.no_tags() for unit in units]
+		else:
+			units = [unit.with_tags() for unit in units]
 		print(' '.join(units))
 
 main(args)
