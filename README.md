@@ -1,8 +1,8 @@
-# Spaceless Segmentation
+# Japanese Tokenizer Using a Morphological Transducer
 
-Spaceless Segmentation is a tokeniser that *should* work for all spaceless languages. Currently, the only language which Spaceless Segmentation has been tested on is Chinese.
+Tokenizer that uses dynamic programming to identify valid (as defined by the transducer) word boundaries in Japanaese text.
 
-# Using Spaceless Segmentation
+# Use
 
 ## `tokenise.py`
 
